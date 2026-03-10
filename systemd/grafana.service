@@ -1,0 +1,31 @@
+[Unit]
+Description=Grafana Dashboard
+Requires=docker.service
+After=docker.service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Restart=always
+ExecStartPre=-/usr/bin/docker stop -t 2 grafana
+ExecStartPre=-/usr/bin/docker rm grafana
+
+ExecStart=/usr/bin/docker run --rm \
+    --name grafana \
+    --network monitoring-net \
+    -p 0.0.0.0:3000:3000 \
+    -v /mnt/monitoring/grafana//var/lib/grafana \
+    -v /mnt/monitoring/grafana/provisioning:/etc/grafana/provisioning \
+    -e "GF_SECURITY_ADMIN_PASSWORD=StrongPassword123!" \
+    -e "GF_USERS_ALLOW_SIGN_UP=false" \
+    --memory="512m" \
+    --cpus="0.5" \
+    --log-driver=json-file \
+    --log-opt max-size=50m \
+    --log-opt max-file=3 \
+    grafana/grafana:latest
+
+ExecStop=/usr/bin/docker stop -t 2 grafana
+
+[Install]
+WantedBy=multi-user.target

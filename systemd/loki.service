@@ -1,0 +1,30 @@
+[Unit]
+Description=Loki Log Aggregator
+Requires=docker.service
+After=docker.service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Restart=always
+ExecStartPre=-/usr/bin/docker stop -t 2 loki
+ExecStartPre=-/usr/bin/docker rm loki
+
+ExecStart=/usr/bin/docker run --rm \
+    --name loki \
+    --network monitoring-net \
+    -p 127.0.0.1:3100:3100 \
+    -v /mnt/monitoring/loki//loki \
+    -v /mnt/monitoring/configs/loki.yaml:/etc/loki/local-config.yaml \
+    --memory="1g" \
+    --cpus="1.0" \
+    --log-driver=json-file \
+    --log-opt max-size=50m \
+    --log-opt max-file=3 \
+    grafana/loki:latest \
+    -config.file=/etc/loki/local-config.yaml
+
+ExecStop=/usr/bin/docker stop -t 2 loki
+
+[Install]
+WantedBy=multi-user.target
